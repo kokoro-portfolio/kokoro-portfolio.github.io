@@ -1,0 +1,230 @@
+html {
+    scroll-behavior: smooth;
+    margin: 0;
+    padding: 0;
+}
+
+@media (max-width: 600px) {
+    .responsive-image {
+        background-image: url('small-image.jpg');
+    }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+    .responsive-image {
+        background-image: url('medium-image.jpg');
+    }
+}
+
+@media (min-width: 901px) {
+    .responsive-image {
+        background-image: url('large-image.jpg');
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    font-family:"MS ゴシック", "MS Gothic", "Yu Gothic", "游ゴシック", YuGothic, "游ゴシック体", "ヒラギノ角ゴ Pro W3", sans-serif;
+}
+
+div {
+    overflow: hidden;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+a {
+    cursor: pointer;
+}
+
+p {
+  line-height: 1.5;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+#return-to-top {
+    position: fixed;
+    bottom: 10px;
+    right: 60px;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+	font-size: 80px;
+	color: #000000;
+}
+
+.page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.box{
+	overflow-wrap: break-word;
+}
+
+.title {
+	font-size: 40px;
+	color: #000000
+}
+
+.title2 {
+    font-size: 20px;
+    color: #000000
+}
+
+.title3 {
+    font-size: 30px;
+    color: #000000
+}
+
+.title4 {
+    font-size: 13px;
+    color: #000000
+}
+
+.title5 {
+    font-size: 12px;
+    color: #696969
+}
+
+.center {
+	margin:0 auto; 
+	width: 800px; 
+	box-sizing: border-box;
+}
+
+.blank {
+    width: 100%;
+    max-width: 1200px;
+    height: 30px;
+    background-color: #ffffff;
+    margin: 0 auto;
+}
+
+.blank2 {
+    width: 100%;
+    max-width: 1200px;
+    height: 10px;
+    background-color: #ffffff;
+    margin: 0 auto;
+}
+
+.blank3 {
+    width: 100%;
+    max-width: 1200px;
+    height: 15px;
+    background-color: #ffffff;
+    margin: 0 auto;
+}
+
+.box1 {
+    width: 100%;
+    max-width: 1200px;
+    height: 800px;
+    background-color: #ffffff;
+    margin: 0 auto;
+}
+
+.box2 {
+    width: 100%;
+    max-width: 1200px;
+    background-color: #ffffff;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.box3{
+    float: left;
+    width: 400px;
+    max-width: 400px;
+    height: 500px;
+    background-color: #ffffff;
+    box-sizing: border-box;
+    padding: 20px;
+}
+
+.box4 {
+    width: 800px; 
+    height: 500px;
+    margin: 0 auto; 
+    border: 10px solid #000000; 
+    padding: 0px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+}
+
+.box5 {
+    width: 200px;
+    height: 430px;
+    background-color: #ffffff; 
+}
+
+.box6 {
+    top: 300px;
+    left: 0px;
+    text-align: left;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.box7 {
+    width: 1000px; 
+    height: 220px;
+    margin: 0 auto; 
+    padding:0px; display:flex; 
+    justify-content: space-between; 
+    align-items: center;
+}
+
+.box8 {
+    width: 300px;
+    height: 220px;
+    background-color: #ffffff;
+}
+
+.box9 {
+    width: 800px; 
+    margin: 0 auto;  
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+}
+
+.box10 {
+    width: 250px;
+    height: 250px;
+    background-color: #ffffff; 
+}
+
+
+.border {
+    border: 10px solid #000000; 
+}
+
+
+
+.border-left {
+    border-left: 10px solid #000000;
+    border-right: 0px solid #000000;
+    border-top: 10px solid #000000;
+    border-bottom: 10px solid #000000;
+}
+
+.border-right {
+    border-left: 0px solid #000000;
+    border-right: 10px solid #000000;
+    border-top: 10px solid #000000;
+    border-bottom: 10px solid #000000;
+}

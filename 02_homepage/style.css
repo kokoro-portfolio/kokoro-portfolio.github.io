@@ -4,6 +4,24 @@ html {
     padding: 0;
 }
 
+@media (max-width: 600px) {
+    .responsive-image {
+        background-image: url('small-image.jpg');
+    }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+    .responsive-image {
+        background-image: url('medium-image.jpg');
+    }
+}
+
+@media (min-width: 901px) {
+    .responsive-image {
+        background-image: url('large-image.jpg');
+    }
+}
+
 * {
     box-sizing: border-box;
 }
@@ -13,6 +31,7 @@ body {
     padding: 0;
     font-weight: bold;
     letter-spacing: 0.1em;
+    font-family:"MS ゴシック", "MS Gothic", "Yu Gothic", "游ゴシック", YuGothic, "游ゴシック体", "ヒラギノ角ゴ Pro W3", sans-serif;
 }
 
 div {
