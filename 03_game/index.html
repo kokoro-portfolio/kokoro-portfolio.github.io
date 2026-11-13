@@ -2,7 +2,8 @@
 <html lang="ja">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
         <meta name="robots" content="noindex">
         
         <title>対戦♡神経衰弱</title>
@@ -20,17 +21,19 @@
         
         body {
             margin: 0;
-            padding: 20px 0;
-            overflow-x: hidden;
-            font-family: sans-serif;
-            background-color: #000000;
+            padding: 0;
+            overflow: hidden;
             font-family: 'dot', sans-serif;
+            background-color: #000000;
         }
         
         .screen {
-            width: 100%;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             display: flex;
             justify-content: center;
+            align-items: center;
             overflow: hidden;
         }
         
@@ -39,7 +42,7 @@
             min-height: 700px;
             position: relative;
             flex-shrink: 0;
-            transform-origin: top center;
+            transform-origin: center center;
         }
         
         /* 全体の配置 */
@@ -326,12 +329,99 @@
             color: #ffffff;
             border: 3px solid #ffffff;
         }
+
+        #rotateMessage {
+            display: none;
+        }
+
+        @media screen and (max-width: 900px)
+        and (orientation: portrait) {
+
+            #rotateMessage {
+                position: fixed;
+                inset: 0;
+                z-index: 9999;
+                background: #000000;
+                color: #ffffff;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                font-size: 24px;
+            }
         
+        }
+        
+        /* =================================
+           スマートフォン横画面対応
+        ================================= */
+
+        /* スマートフォン */
+        @media screen and (max-width: 900px) {
+
+            html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+            }
+        
+            .screen {
+                width: 100vw;
+                height: 100dvh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden;
+            }
+        
+            .base {
+                width: 1200px;
+                min-height: 700px;
+                transform-origin: center center;
+                transform: scale(var(--game-scale, 1));
+            }
+        
+            .gameArea {
+                width: 1200px;
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                gap: 20px;
+            }
+        
+            .player {
+                flex-shrink: 0;
+            }
+        
+            .centerArea {
+                flex-shrink: 0;
+            }
+        
+            #gameBoard {
+                touch-action: manipulation;
+            }
+        
+            .box3 {
+                cursor: pointer;
+                touch-action: manipulation;
+            }
+        
+            .startbutton,
+            .easy,
+            .normal,
+            .hard {
+                touch-action: manipulation;
+            }
+        
+        }
+                
         </style>
     </head>
-        
-    <body>
-        
+            
+    <body>        
         <div class="screen">
             <div class="base">
         
@@ -414,980 +504,935 @@
         </div>
     
     
-    <script>
-    
-    // ========================================
-    // ゲームの基本設定
-    // ========================================
-    
-    // ライフ
-    var maxLife = 8;
-    var cpuLifeCount = 8;
-    var myLifeCount = 8;
-    
-    // ポイント
-    var cpuPoint = 0;
-    var myPoint = 0;
-    
-    // ゲーム状態
-    var gameActive = false;
-    
-    // 現在のプレイヤー
-    // "my" = 自分
-    // "cpu" = CPU
-    var currentTurn = "my";
-    
-    // 選択されたカード
-    var selectedBoxes = [];
-    
-    // カード比較中かどうか
-    var checking = false;
-    
-    // 残りのカード数
-    var remainingBoxes = 36;
-    
-    // CPUのタイマー
-    var cpuTimerID;
-    
-    // CPUが記憶しているカード
-    var cpuMemory = {};
-
-
-    // CPUの難易度
-    var cpuDifficulty = "normal";
-
-    // 難易度を選択する関数
-    function setDifficulty(level) {
-
-        cpuDifficulty = level;
-
-        // すべての選択状態を解除
-        document.querySelector(".easy").classList.remove("selected");
-        document.querySelector(".normal").classList.remove("selected");
-        document.querySelector(".hard").classList.remove("selected");
-
-        // 選択した難易度を赤くする
-        if (level === "easy") {
-            document.querySelector(".easy").classList.add("selected");
-        }
-
-        else if (level === "normal") {
-            document.querySelector(".normal").classList.add("selected");
-        }
-
-        else if (level === "hard") {
-            document.querySelector(".hard").classList.add("selected");
-        }
-    }
-
-    // 最初は「ふつう」を選択
-    setDifficulty("normal");
-
-
-    // ========================================
-    // 記号の設定（18組）
-    // ========================================
-    
-    var marks = [
-        "○","○",
-        "●","●",
-        "★","★",
-        "☆","☆",
-        "!","!",
-        "?","?",
-        "※","※",
-        "♪","♪",
-        "*","*",
-        "-","-",
-        "+","+",
-        "1","1",
-        "2","2",
-        "3","3",
-        "あ","あ",
-        "A","A",
-        "a","a",
-        "(^.^)","(^.^)"
-    ];
-    
-    
-    // ========================================
-    // カードを作成する
-    // ========================================
-    
-    function createBoxes() {
-    
-        var board = document.getElementById("gameBoard");
-    
-        board.innerHTML = "";
-    
-        for (var id = 0; id < 36; id++) {
-    
-            var box = document.createElement("div");
-    
-            box.className = "box3";
-            box.id = "no" + (id + 1);
-    
-            box.textContent = marks[id];
-    
-            box.onclick = function() {
-                changeColor(this);
-            };
-    
-            board.appendChild(box);
-        }
-    }
-    
-    
-    // ========================================
-    // カードをシャッフルする
-    // ========================================
-    
-    function resetImg() {
-    
-        var box = [];
-    
-        for (var id = 0; id < 36; id++) {
-    
-            box[id] = document.getElementById(
-                "no" + (id + 1)
-            ).textContent;
-    
-        }
-    
-        // Fisher-Yatesシャッフル
-        for (var i = box.length - 1; i > 0; i--) {
-    
-            var j = Math.floor(Math.random() * (i + 1));
-    
-            var temp = box[i];
-    
-            box[i] = box[j];
-            box[j] = temp;
-    
-        }
-    
-        // シャッフルした記号を配置
-        for (var id = 0; id < 36; id++) {
-    
-            document.getElementById(
-                "no" + (id + 1)
-            ).textContent = box[id];
-    
-        }
-    }
-    
-    
-    // ========================================
-    // ライフを表示する
-    // ========================================
-    
-    function displayLife() {
-    
-        displayOneLife(
-            "cpuLife",
-            cpuLifeCount
-        );
-    
-        displayOneLife(
-            "myLife",
-            myLifeCount
-        );
-    
-    }
-    
-    
-    // ライフを個別に表示
-    function displayOneLife(areaID, count) {
-    
-        var area = document.getElementById(areaID);
-    
-        area.innerHTML = "";
-    
-        for (var i = 0; i < maxLife; i++) {
-    
-            var heart = document.createElement("div");
-    
-            heart.className = "heart";
-    
-            if (i < count) {
-    
-                heart.textContent = "♥";
-    
-            } else {
-    
-                heart.textContent = "♡";
-                heart.classList.add("lost");
-    
-            }
-    
-            area.appendChild(heart);
-    
-        }
-    
-    }
-    
-    
-    // ========================================
-    // ポイントを表示する
-    // ========================================
-    
-    function displayPoint() {
-    
-        document.getElementById("cpuPoint").textContent =
-            cpuPoint;
-    
-        document.getElementById("myPoint").textContent =
-            myPoint;
-    
-    }
-    
-    
-    // ========================================
-    // 現在のターンを表示する
-    // ========================================
-    
-    function displayTurn() {
-    
-        var message = document.getElementById("turnMessage");
-    
-        var cpuPanel = document.getElementById("cpuPanel");
-    
-        var myPanel = document.getElementById("myPanel");
-    
-        cpuPanel.classList.remove("active");
-        myPanel.classList.remove("active");
-    
-        if (currentTurn === "my") {
-    
-            message.textContent = "あなたのターン";
-    
-            myPanel.classList.add("active");
-    
-            document.getElementById("cpuThinking").textContent = "";
-    
-        } else {
-    
-            message.textContent = "CPUのターン";
-    
-            cpuPanel.classList.add("active");
-    
-        }
-    
-    }
-    
-    
-    // ========================================
-    // ゲーム開始・リセット
-    // ========================================
-    
-    function startGame() {
-    
-        // CPUの処理を停止
-        clearTimeout(cpuTimerID);
-    
-        // ゲームを停止
-        gameActive = false;
-    
-        // カードを再作成
-        createBoxes();
-    
-        // カードをシャッフル
-        resetImg();
-    
-        // ライフをリセット
-        cpuLifeCount = maxLife;
-        myLifeCount = maxLife;
-    
-        // ポイントをリセット
-        cpuPoint = 0;
-        myPoint = 0;
-    
-        // 選択状態をリセット
-        selectedBoxes = [];
-    
-        checking = false;
-    
-        // カード数をリセット
-        remainingBoxes = 36;
-    
-        // CPUの記憶をリセット
-        cpuMemory = {};
-    
-        // 最初は自分のターン
-        currentTurn = "my";
-    
-        // すべてのカードを裏向きにする
-        for (var id = 0; id < 36; id++) {
-    
-            var box = document.getElementById(
-                "no" + (id + 1)
-            );
-    
-            box.classList.remove("selected");
-            box.classList.remove("corrected");
-            box.classList.remove("falsed");
-            box.classList.remove("matched");
-    
-            box.classList.add("started");
-    
-        }
-    
-        // 表示を更新
-        displayLife();
-    
-        displayPoint();
-    
-        displayTurn();
-    
-        // メッセージをリセット
-        document.getElementById("gameMessage").textContent = "";
-    
-        document.getElementById("resultOverlay").style.display = "none";
-    
-        document.getElementById("cpuThinking").textContent = "";
-    
-        // ゲーム開始
-        gameActive = true;
-    
-    }
-    
-    
-    // ========================================
-    // CPUのターン開始
-    // ========================================
-    
-    function startCPUTurn() {
-    
-        if (!gameActive) {
-            return;
-        }
-    
-        if (currentTurn !== "cpu") {
-            return;
-        }
-    
-        if (checking) {
-            return;
-        }
-    
-        document.getElementById("cpuThinking").textContent =
-            "...考え中...";
-    
-        // 少し待ってからカードを選ぶ
-        cpuTimerID = setTimeout(function() {
-    
-            if (!gameActive) {
-                return;
-            }
-    
-            cpuSelectBoxes();
-    
-        }, 1000);
-    
-    }
-    
-    
-    // ========================================
-    // CPUがカードを選ぶ
-    // ========================================
-    
-    function cpuSelectBoxes() {
-    
-        if (!gameActive || currentTurn !== "cpu") {
-            return;
-        }
-    
-        // 選択可能なカードを取得
-        var availableBoxes = [];
-    
-        for (var id = 0; id < 36; id++) {
-    
-            var box = document.getElementById(
-                "no" + (id + 1)
-            );
-    
-            if (
-                box.classList.contains("started") &&
-                !box.classList.contains("matched")
-            ) {
-    
-                availableBoxes.push(box);
-    
-            }
-    
-        }
-    
-        // 2枚選べない場合
-        if (availableBoxes.length < 2) {
-            return;
-        }
-    
-        // 1枚目を選択
-        var firstBox = availableBoxes[
-            Math.floor(Math.random() * availableBoxes.length)
-        ];
-    
-        // 1枚目を表示
-        revealBox(firstBox);
-    
-        // 2枚目は少し遅らせる
-        cpuTimerID = setTimeout(function() {
-    
-            if (!gameActive || currentTurn !== "cpu") {
-                return;
-            }
-    
-            // 2枚目の候補を取得
-            var secondBoxes = [];
-    
-            for (var id = 0; id < 36; id++) {
-    
-                var box = document.getElementById(
-                    "no" + (id + 1)
-                );
-    
-                if (
-                    box.classList.contains("started") &&
-                    box !== firstBox
-                ) {
-    
-                    secondBoxes.push(box);
-    
-                }
-    
-            }
-    
-            if (secondBoxes.length === 0) {
-                return;
-            }
-    
-            // 2枚目をランダム選択
-            var secondBox = secondBoxes[
-                Math.floor(Math.random() * secondBoxes.length)
-            ];
-    
-            revealBox(secondBox);
-    
-            // 2枚選択したので比較
-            checkPair();
-    
-        }, 800);
-    
-    }
-    
-    // ========================================
-    // カードを表向きにする
-    // ========================================
-    
-    function revealBox(box) {
-    
-        if (!box || !box.classList.contains("started")) {
-            return;
-        }
-    
-        box.classList.remove("started");
-        box.classList.add("selected");
-    
-        // CPUの記憶にカードを登録
-        rememberBox(box);
-    
-        selectedBoxes.push(box);
-    
-    }
-    
-    
-    // ========================================
-    // CPUのカード記憶
-    // ========================================
-    
-    function rememberBox(box) {
-    
-        var mark = box.textContent;
-    
-        var id = box.id;
-    
-        if (!cpuMemory[mark]) {
-    
-            cpuMemory[mark] = [];
-    
-        }
-    
-        // 同じカードを重複登録しない
-        if (!cpuMemory[mark].includes(id)) {
-    
-            cpuMemory[mark].push(id);
-    
-        }
-    
-    }
-    
-    
-    // ========================================
-    // CPUが記憶しているペアを探す
-    // ========================================
-    
-    function findCPUPair() {
-    
-        for (var mark in cpuMemory) {
-    
-            var list = cpuMemory[mark];
-    
-            var available = [];
-    
-            for (var i = 0; i < list.length; i++) {
-    
-                var box = document.getElementById(list[i]);
-    
-                if (
-                    box &&
-                    box.classList.contains("started")
-                ) {
-    
-                    available.push(box);
-    
-                }
-    
-            }
-    
-            if (available.length >= 2) {
-    
-                return available.slice(0, 2);
-    
-            }
-    
-        }
-    
-        return null;
-    
-    }
-    
-    
-    // ========================================
-    // CPUのカード選択を変更
-    // ========================================
-    
-    function cpuSelectBoxes() {
-    
-        if (!gameActive || currentTurn !== "cpu") {
-            return;
-        }
-    
-        var availableBoxes = [];
-    
-        for (var id = 0; id < 36; id++) {
-    
-            var box = document.getElementById(
-                "no" + (id + 1)
-            );
-    
-            if (box.classList.contains("started")) {
-    
-                availableBoxes.push(box);
-    
-            }
-    
-        }
-    
-        if (availableBoxes.length < 2) {
-            return;
-        }
-    
-        // 難易度によって記憶したペアを使う確率を変更
-        var memoryRate = 0;
+        <script>
         
-        if (cpuDifficulty === "easy") {
-            memoryRate = 0;
-        }
-        
-        if (cpuDifficulty === "normal") {
-            memoryRate = 0.5;
-        }
-        
-        if (cpuDifficulty === "hard") {
-            memoryRate = 1;
-        }
-        
-        // 記憶を利用するか判定
-        var rememberedPair = null;
-        
-        if (Math.random() < memoryRate) {
-            rememberedPair = findCPUPair();
-        }
-
-        var firstBox;
-
-        var secondBox;
-    
-        if (rememberedPair) {
-    
-            firstBox = rememberedPair[0];
-    
-            secondBox = rememberedPair[1];
-    
-        } else {
-    
-            // 記憶にペアがなければランダム選択
-            firstBox = availableBoxes[
-                Math.floor(Math.random() * availableBoxes.length)
-            ];
-    
-            var secondBoxes = availableBoxes.filter(function(box) {
-    
-                return box !== firstBox;
-    
-            });
-    
-            secondBox = secondBoxes[
-                Math.floor(Math.random() * secondBoxes.length)
-            ];
-    
-        }
-    
-        // 1枚目を表示
-        revealBox(firstBox);
-    
-        // 2枚目を表示
-        cpuTimerID = setTimeout(function() {
-    
-            if (!gameActive || currentTurn !== "cpu") {
-                return;
-            }
-    
-            revealBox(secondBox);
-    
-            checkPair();
-    
-        }, 800);
-    
-    }
-    
-    
-    // ========================================
-    // 自分がカードをクリックしたとき
-    // ========================================
-    
-    function changeColor(box) {
-    
-        if (!gameActive) {
-            return;
-        }
-    
-        // 自分のターン以外は操作できない
-        if (currentTurn !== "my") {
-            return;
-        }
-    
-        if (checking) {
-            return;
-        }
-    
-        if (!box.classList.contains("started")) {
-            return;
-        }
-    
-        revealBox(box);
-    
-        // 2枚選択されたら比較
-        if (selectedBoxes.length === 2) {
-    
-            checkPair();
-    
-        }
-    
-    }
-    
-    
-    // ========================================
-    // 2枚のカードを比較する
-    // ========================================
-    
-    function checkPair() {
-    
-        if (selectedBoxes.length !== 2) {
-            return;
-        }
-    
-        checking = true;
-    
-        var box1 = selectedBoxes[0];
-    
-        var box2 = selectedBoxes[1];
-    
-        var mark1 = box1.textContent;
-    
-        var mark2 = box2.textContent;
-    
-        var player = currentTurn;
-    
-        if (mark1 === mark2) {
-    
-            // --------------------------------
-            // 正解
-            // --------------------------------
-    
-            box1.classList.remove("selected");
-    box2.classList.remove("selected");
-    
-    box1.classList.add("matched");
-    box2.classList.add("matched");
-    
-    // 取得したプレイヤーによって色を変更
-    if (player === "my") {
-    
-        box1.classList.add("myMatched");
-        box2.classList.add("myMatched");
-    
-    } else {
-    
-        box1.classList.add("cpuMatched");
-        box2.classList.add("cpuMatched");
-    
-    }
-    
+            // ========================================
+            // ゲームの基本設定
+            // ========================================
             
-    // ポイントを1加算
-    if (player === "my") {
-    
-        myPoint++;
-    
-        // 自分のライフを1回復
-        if (myLifeCount < maxLife) {
-            myLifeCount++;
-        }
-    
-    } else {
-    
-        cpuPoint++;
-    
-        // CPUのライフを1回復
-        if (cpuLifeCount < maxLife) {
-            cpuLifeCount++;
-        }
-    
-    }
-    
-    // ライフ表示を更新
-    displayLife();
-    
-    
-            // 残りカード数を2減らす
-            remainingBoxes -= 2;
-    
-            // 表示を更新
-            displayPoint();
-    
-            document.getElementById("gameMessage").textContent =
-                player === "my"
-                ? "正解！もう一度挑戦できます"
-                : "CPUが正解！連続で挑戦します";
-    
-            selectedBoxes = [];
-    
-            checking = false;
-    
-            // 全カード終了
-            if (remainingBoxes === 0) {
-    
-                endGame();
-    
-                return;
-    
+            // ライフ
+            var maxLife = 8;
+            var cpuLifeCount = 8;
+            var myLifeCount = 8;
+            
+            // ポイント
+            var cpuPoint = 0;
+            var myPoint = 0;
+            
+            // ゲーム状態
+            var gameActive = false;
+            
+            // 現在のプレイヤー
+            // "my" = 自分
+            // "cpu" = CPU
+            var currentTurn = "my";
+            
+            // 選択されたカード
+            var selectedBoxes = [];
+            
+            // カード比較中かどうか
+            var checking = false;
+            
+            // 残りのカード数
+            var remainingBoxes = 36;
+        
+            // CPUのタイマー
+            var cpuTimerID;
+            
+            // CPUが記憶しているカード
+            var cpuMemory = {};
+        
+        
+            // CPUの難易度
+            var cpuDifficulty = "normal";
+        
+            // 難易度を選択する関数
+            function setDifficulty(level) {
+        
+                cpuDifficulty = level;
+        
+                // すべての選択状態を解除
+                document.querySelector(".easy").classList.remove("selected");
+                document.querySelector(".normal").classList.remove("selected");
+                document.querySelector(".hard").classList.remove("selected");
+        
+                // 選択した難易度を赤くする
+                if (level === "easy") {
+                    document.querySelector(".easy").classList.add("selected");
+                }
+        
+                else if (level === "normal") {
+                    document.querySelector(".normal").classList.add("selected");
+                }
+        
+                else if (level === "hard") {
+                    document.querySelector(".hard").classList.add("selected");
+                }
             }
-    
-            // 正解したプレイヤーが続ける
-            if (player === "cpu") {
-    
-                cpuTimerID = setTimeout(function() {
-    
-                    startCPUTurn();
-    
-                }, 1000);
-    
+        
+            // 最初は「ふつう」を選択
+            setDifficulty("normal");
+        
+        
+            // ========================================
+            // 記号の設定（18組）
+            // ========================================
+            
+            var marks = [
+                "○","○",
+                "●","●",
+                "★","★",
+                "☆","☆",
+                "!","!",
+                "?","?",
+                "※","※",
+                "♪","♪",
+                "*","*",
+                "-","-",
+                "+","+",
+                "1","1",
+                "2","2",
+                "3","3",
+                "あ","あ",
+                "A","A",
+                "a","a",
+                "(^.^)","(^.^)"
+            ];
+            
+            
+            // ========================================
+            // カードを作成する
+            // ========================================
+            
+            function createBoxes() {
+            
+                var board = document.getElementById("gameBoard");
+            
+                board.innerHTML = "";
+            
+                for (var id = 0; id < 36; id++) {
+            
+                    var box = document.createElement("div");
+            
+                    box.className = "box3";
+                    box.id = "no" + (id + 1);
+            
+                    box.textContent = marks[id];
+            
+                    box.onclick = function() {
+                        changeColor(this);
+                    };
+            
+                    board.appendChild(box);
+                }
             }
-    
-        } else {
-    
-            // --------------------------------
-            // 不正解
-            // --------------------------------
-    
-            box1.classList.remove("selected");
-            box2.classList.remove("selected");
-    
-            box1.classList.add("falsed");
-            box2.classList.add("falsed");
-    
-            document.getElementById("gameMessage").textContent =
-                player === "my"
-                ? "不正解！CPUに交代します"
-                : "CPUは不正解！あなたのターンです";
-    
-            // 1秒後にカードを裏向きに戻す
-            setTimeout(function() {
-    
+            
+            
+            // ========================================
+            // カードをシャッフルする
+            // ========================================
+            
+            function resetImg() {
+            
+                var box = [];
+            
+                for (var id = 0; id < 36; id++) {
+            
+                    box[id] = document.getElementById(
+                        "no" + (id + 1)
+                    ).textContent;
+            
+                }
+            
+                // Fisher-Yatesシャッフル
+                for (var i = box.length - 1; i > 0; i--) {
+            
+                    var j = Math.floor(Math.random() * (i + 1));
+            
+                    var temp = box[i];
+            
+                    box[i] = box[j];
+                    box[j] = temp;
+            
+                }
+            
+                // シャッフルした記号を配置
+                for (var id = 0; id < 36; id++) {
+            
+                    document.getElementById(
+                        "no" + (id + 1)
+                    ).textContent = box[id];
+            
+                }
+            }
+            
+            
+            // ========================================
+            // ライフを表示する
+            // ========================================
+            
+            function displayLife() {
+            
+                displayOneLife(
+                    "cpuLife",
+                    cpuLifeCount
+                );
+            
+                displayOneLife(
+                    "myLife",
+                    myLifeCount
+                );
+            
+            }
+            
+            
+            // ライフを個別に表示
+            function displayOneLife(areaID, count) {
+            
+                var area = document.getElementById(areaID);
+            
+                area.innerHTML = "";
+            
+                for (var i = 0; i < maxLife; i++) {
+            
+                    var heart = document.createElement("div");
+            
+                    heart.className = "heart";
+            
+                    if (i < count) {
+            
+                        heart.textContent = "♥";
+            
+                    } else {
+            
+                        heart.textContent = "♡";
+                        heart.classList.add("lost");
+            
+                    }
+            
+                    area.appendChild(heart);
+            
+                }
+            
+            }
+            
+            
+            // ========================================
+            // ポイントを表示する
+            // ========================================
+            
+            function displayPoint() {
+            
+                document.getElementById("cpuPoint").textContent =
+                    cpuPoint;
+            
+                document.getElementById("myPoint").textContent =
+                    myPoint;
+            
+            }
+            
+            
+            // ========================================
+            // 現在のターンを表示する
+            // ========================================
+            
+            function displayTurn() {
+            
+                var message = document.getElementById("turnMessage");
+            
+                var cpuPanel = document.getElementById("cpuPanel");
+            
+                var myPanel = document.getElementById("myPanel");
+            
+                cpuPanel.classList.remove("active");
+                myPanel.classList.remove("active");
+            
+                if (currentTurn === "my") {
+            
+                    message.textContent = "あなたのターン";
+            
+                    myPanel.classList.add("active");
+            
+                    document.getElementById("cpuThinking").textContent = "";
+            
+                } else {
+            
+                    message.textContent = "CPUのターン";
+            
+                    cpuPanel.classList.add("active");
+            
+                }
+            
+            }
+            
+            
+            // ========================================
+            // ゲーム開始・リセット
+            // ========================================
+            
+            function startGame() {
+            
+                // CPUの処理を停止
+                clearTimeout(cpuTimerID);
+            
+                // ゲームを停止
+                gameActive = false;
+            
+                // カードを再作成
+                createBoxes();
+            
+                // カードをシャッフル
+                resetImg();
+            
+                // ライフをリセット
+                cpuLifeCount = maxLife;
+                myLifeCount = maxLife;
+            
+                // ポイントをリセット
+                cpuPoint = 0;
+                myPoint = 0;
+            
+                // 選択状態をリセット
+                selectedBoxes = [];
+            
+                checking = false;
+            
+                // カード数をリセット
+                remainingBoxes = 36;
+            
+                // CPUの記憶をリセット
+                cpuMemory = {};
+            
+                // 最初は自分のターン
+                currentTurn = "my";
+            
+                // すべてのカードを裏向きにする
+                for (var id = 0; id < 36; id++) {
+            
+                    var box = document.getElementById(
+                        "no" + (id + 1)
+                    );
+            
+                    box.classList.remove("selected");
+                    box.classList.remove("corrected");
+                    box.classList.remove("falsed");
+                    box.classList.remove("matched");
+            
+                    box.classList.add("started");
+            
+                }
+            
+                // 表示を更新
+                displayLife();
+            
+                displayPoint();
+            
+                displayTurn();
+            
+                // メッセージをリセット
+                document.getElementById("gameMessage").textContent = "";
+            
+                document.getElementById("resultOverlay").style.display = "none";
+            
+                document.getElementById("cpuThinking").textContent = "";
+            
+                // ゲーム開始
+                gameActive = true;
+            
+            }
+            
+            
+            // ========================================
+            // CPUのターン開始
+            // ========================================
+            
+            function startCPUTurn() {
+            
                 if (!gameActive) {
                     return;
                 }
-    
-                box1.classList.remove("falsed");
-                box2.classList.remove("falsed");
-    
-                box1.classList.add("started");
-                box2.classList.add("started");
-    
-                selectedBoxes = [];
-    
-                checking = false;
-    
-                
-                // ライフを減らす
-                if (player === "my") {
-    
-                    if (myLifeCount > 0) {
-                        myLifeCount--;
-                    }
-    
-                } else {
-    
-                    if (cpuLifeCount > 0) {
-                        cpuLifeCount--;
-                    }
-    
-                }
-    
-                displayLife();
-    
-    
-                // ライフが0になったらゲーム終了
-                if (myLifeCount <= 0 || cpuLifeCount <= 0) {
-    
-                    gameActive = false;
-    
-                    clearTimeout(cpuTimerID);
-    
-                    selectedBoxes = [];
-    
-                    checking = false;
-    
-                    // 勝敗判定
-                    // ゲーム終了画面も表示
-                    endGame();
-    
+            
+                if (currentTurn !== "cpu") {
                     return;
-    
                 }
-    
-    
-                // ターン交代
-                if (player === "my") {
-    
-                    currentTurn = "cpu";
-    
+            
+                if (checking) {
+                    return;
+                }
+            
+                document.getElementById("cpuThinking").textContent =
+                    "...考え中...";
+            
+                // 少し待ってからカードを選ぶ
+                cpuTimerID = setTimeout(function() {
+            
+                    if (!gameActive) {
+                        return;
+                    }
+            
+                    cpuSelectBoxes();
+            
+                }, 1000);
+            
+            }
+            
+            
+            
+            
+            // ========================================
+            // カードを表向きにする
+            // ========================================
+            
+            function revealBox(box) {
+            
+                if (!box || !box.classList.contains("started")) {
+                    return;
+                }
+            
+                box.classList.remove("started");
+                box.classList.add("selected");
+            
+                // CPUの記憶にカードを登録
+                rememberBox(box);
+            
+                selectedBoxes.push(box);
+            
+            }
+            
+            
+            // ========================================
+            // CPUのカード記憶
+            // ========================================
+            
+            function rememberBox(box) {
+            
+                var mark = box.textContent;
+            
+                var id = box.id;
+            
+                if (!cpuMemory[mark]) {
+            
+                    cpuMemory[mark] = [];
+            
+                }
+            
+                // 同じカードを重複登録しない
+                if (!cpuMemory[mark].includes(id)) {
+            
+                    cpuMemory[mark].push(id);
+            
+                }
+            
+            }
+            
+            
+            // ========================================
+            // CPUが記憶しているペアを探す
+            // ========================================
+            
+            function findCPUPair() {
+            
+                for (var mark in cpuMemory) {
+            
+                    var list = cpuMemory[mark];
+            
+                    var available = [];
+            
+                    for (var i = 0; i < list.length; i++) {
+            
+                        var box = document.getElementById(list[i]);
+            
+                        if (
+                            box &&
+                            box.classList.contains("started")
+                        ) {
+            
+                            available.push(box);
+            
+                        }
+            
+                    }
+            
+                    if (available.length >= 2) {
+            
+                        return available.slice(0, 2);
+            
+                    }
+            
+                }
+            
+                return null;
+            
+            }
+            
+            
+            // ========================================
+            // CPUのカード選択を変更
+            // ========================================
+            
+            function cpuSelectBoxes() {
+            
+                if (!gameActive || currentTurn !== "cpu") {
+                    return;
+                }
+            
+                var availableBoxes = [];
+            
+                for (var id = 0; id < 36; id++) {
+            
+                    var box = document.getElementById(
+                        "no" + (id + 1)
+                    );
+            
+                    if (box.classList.contains("started")) {
+            
+                        availableBoxes.push(box);
+            
+                    }
+            
+                }
+            
+                if (availableBoxes.length < 2) {
+                    return;
+                }
+            
+                // 難易度によって記憶したペアを使う確率を変更
+                var memoryRate = 0;
+                
+                if (cpuDifficulty === "easy") {
+                    memoryRate = 0;
+                }
+                
+                if (cpuDifficulty === "normal") {
+                    memoryRate = 0.5;
+                }
+                
+                if (cpuDifficulty === "hard") {
+                    memoryRate = 1;
+                }
+                
+                // 記憶を利用するか判定
+                var rememberedPair = null;
+                
+                if (Math.random() < memoryRate) {
+                    rememberedPair = findCPUPair();
+                }
+        
+                var firstBox;
+        
+                var secondBox;
+            
+                if (rememberedPair) {
+            
+                    firstBox = rememberedPair[0];
+            
+                    secondBox = rememberedPair[1];
+            
                 } else {
-    
-                    currentTurn = "my";
-    
+            
+                    // 記憶にペアがなければランダム選択
+                    firstBox = availableBoxes[
+                        Math.floor(Math.random() * availableBoxes.length)
+                    ];
+            
+                    var secondBoxes = availableBoxes.filter(function(box) {
+            
+                        return box !== firstBox;
+            
+                    });
+            
+                    secondBox = secondBoxes[
+                        Math.floor(Math.random() * secondBoxes.length)
+                    ];
+            
                 }
-    
-                displayTurn();
-    
-                // CPUのターンならCPUを開始
-                if (currentTurn === "cpu") {
-    
-                    startCPUTurn();
-    
+            
+                // 1枚目を表示
+                revealBox(firstBox);
+            
+                // 2枚目を表示
+                cpuTimerID = setTimeout(function() {
+            
+                    if (!gameActive || currentTurn !== "cpu") {
+                        return;
+                    }
+            
+                    revealBox(secondBox);
+            
+                    checkPair();
+            
+                }, 800);
+            
+            }
+            
+            
+            // ========================================
+            // 自分がカードをクリックしたとき
+            // ========================================
+            
+            function changeColor(box) {
+            
+                if (!gameActive) {
+                    return;
                 }
-    
-            }, 1000);
-    
-        }
-    
-    }
-    
-    
-    // ========================================
-    // ゲーム終了
-    // ========================================
-    
-    function endGame() {
-    
-        gameActive = false;
-    
-        checking = false;
-    
-        clearTimeout(cpuTimerID);
-    
-        selectedBoxes = [];
-    
-        // 全カードを表示
-        for (var id = 0; id < 36; id++) {
-    
-            var box = document.getElementById(
-                "no" + (id + 1)
-            );
-    
-            box.classList.remove("started");
-            box.classList.remove("selected");
-            box.classList.remove("falsed");
-    
-            box.classList.add("matched");
-    
-        }
-    
-        // 勝敗判定
-        var title = "";
-    
-        if (myPoint > cpuPoint) {
-    
-            title = "あなたの勝ち！";
-    
-        } else if (myPoint < cpuPoint) {
-    
-            title = "CPUの勝ち！";
-    
-        } else {
-    
-            title = "引き分け！";
-    
-        }
-    
-        // 結果を表示
-        document.getElementById("resultTitle").textContent =
-            title;
-    
-        document.getElementById("resultText").innerHTML =
-            "YOU：" + myPoint + "ポイント<br>" +
-            "CPU：" + cpuPoint + "ポイント";
-    
-        document.getElementById("resultOverlay").style.display =
-            "flex";
-    
-        document.getElementById("turnMessage").textContent =
-            "ゲーム終了";
-    
-        document.getElementById("gameMessage").textContent =
-            "対戦終了！お疲れさまでした";
-    
-        document.getElementById("cpuThinking").textContent = "";
-    
-        document.getElementById("cpuPanel").classList.remove("active");
-    
-        document.getElementById("myPanel").classList.remove("active");
-    
-    }
-    
-    
-    // ========================================
-    // 初期表示
-    // ========================================
-    
-    createBoxes();
-    
-    displayLife();
-    
-    displayPoint();
+            
+                // 自分のターン以外は操作できない
+                if (currentTurn !== "my") {
+                    return;
+                }
+            
+                if (checking) {
+                    return;
+                }
+            
+                if (!box.classList.contains("started")) {
+                    return;
+                }
+            
+                revealBox(box);
+            
+                // 2枚選択されたら比較
+                if (selectedBoxes.length === 2) {
+            
+                    checkPair();
+            
+                }
+            
+            }
+            
+            
+            // ========================================
+            // 2枚のカードを比較する
+            // ========================================
+            
+            function checkPair() {
+            
+                if (selectedBoxes.length !== 2) {
+                    return;
+                }
+            
+                checking = true;
+            
+                var box1 = selectedBoxes[0];
+            
+                var box2 = selectedBoxes[1];
+            
+                var mark1 = box1.textContent;
+            
+                var mark2 = box2.textContent;
+            
+                var player = currentTurn;
+            
+                if (mark1 === mark2) {
+            
+                    // --------------------------------
+                    // 正解
+                    // --------------------------------
+            
+                    box1.classList.remove("selected");
+            box2.classList.remove("selected");
+            
+            box1.classList.add("matched");
+            box2.classList.add("matched");
+            
+            // 取得したプレイヤーによって色を変更
+            if (player === "my") {
+            
+                box1.classList.add("myMatched");
+                box2.classList.add("myMatched");
+            
+            } else {
+            
+                box1.classList.add("cpuMatched");
+                box2.classList.add("cpuMatched");
+            
+            }
+            
+                    
+            // ポイントを1加算
+            if (player === "my") {
+            
+                myPoint++;
+            
+                // 自分のライフを1回復
+                if (myLifeCount < maxLife) {
+                    myLifeCount++;
+                }
+            
+            } else {
+            
+                cpuPoint++;
+            
+                // CPUのライフを1回復
+                if (cpuLifeCount < maxLife) {
+                    cpuLifeCount++;
+                }
+            
+            }
+            
+            // ライフ表示を更新
+            displayLife();
+            
+            
+                    // 残りカード数を2減らす
+                    remainingBoxes -= 2;
+            
+                    // 表示を更新
+                    displayPoint();
+            
+                    document.getElementById("gameMessage").textContent =
+                        player === "my"
+                        ? "正解！もう一度挑戦できます"
+                        : "CPUが正解！連続で挑戦します";
+            
+                    selectedBoxes = [];
+            
+                    checking = false;
+            
+                    // 全カード終了
+                    if (remainingBoxes === 0) {
+            
+                        endGame();
+            
+                        return;
+            
+                    }
+            
+                    // 正解したプレイヤーが続ける
+                    if (player === "cpu") {
+            
+                        cpuTimerID = setTimeout(function() {
+            
+                            startCPUTurn();
+            
+                        }, 1000);
+            
+                    }
+            
+                } else {
+            
+                    // --------------------------------
+                    // 不正解
+                    // --------------------------------
+            
+                    box1.classList.remove("selected");
+                    box2.classList.remove("selected");
+            
+                    box1.classList.add("falsed");
+                    box2.classList.add("falsed");
+            
+                    document.getElementById("gameMessage").textContent =
+                        player === "my"
+                        ? "不正解！CPUに交代します"
+                        : "CPUは不正解！あなたのターンです";
+            
+                    // 1秒後にカードを裏向きに戻す
+                    setTimeout(function() {
+            
+                        if (!gameActive) {
+                            return;
+                        }
+            
+                        box1.classList.remove("falsed");
+                        box2.classList.remove("falsed");
+            
+                        box1.classList.add("started");
+                        box2.classList.add("started");
+            
+                        selectedBoxes = [];
+            
+                        checking = false;
+            
+                        
+                        // ライフを減らす
+                        if (player === "my") {
+            
+                            if (myLifeCount > 0) {
+                                myLifeCount--;
+                            }
+            
+                        } else {
+            
+                            if (cpuLifeCount > 0) {
+                                cpuLifeCount--;
+                            }
+            
+                        }
+            
+                        displayLife();
+            
+            
+                        // ライフが0になったらゲーム終了
+                        if (myLifeCount <= 0 || cpuLifeCount <= 0) {
+            
+                            gameActive = false;
+            
+                            clearTimeout(cpuTimerID);
+            
+                            selectedBoxes = [];
+            
+                            checking = false;
+            
+                            // 勝敗判定
+                            // ゲーム終了画面も表示
+                            endGame();
+            
+                            return;
+            
+                        }
+            
+            
+                        // ターン交代
+                        if (player === "my") {
+            
+                            currentTurn = "cpu";
+            
+                        } else {
+            
+                            currentTurn = "my";
+            
+                        }
+            
+                        displayTurn();
+            
+                        // CPUのターンならCPUを開始
+                        if (currentTurn === "cpu") {
+            
+                            startCPUTurn();
+            
+                        }
+            
+                    }, 1000);
+            
+                }
+            
+            }
+            
+            
+            // ========================================
+            // ゲーム終了
+            // ========================================
+            
+            function endGame() {
+            
+                gameActive = false;
+            
+                checking = false;
+            
+                clearTimeout(cpuTimerID);
+            
+                selectedBoxes = [];
+            
+                // 全カードを表示
+                for (var id = 0; id < 36; id++) {
+            
+                    var box = document.getElementById(
+                        "no" + (id + 1)
+                    );
+            
+                    box.classList.remove("started");
+                    box.classList.remove("selected");
+                    box.classList.remove("falsed");
+            
+                    box.classList.add("matched");
+            
+                }
+            
+                // 勝敗判定
+                var title = "";
+            
+                if (myPoint > cpuPoint) {
+            
+                    title = "あなたの勝ち！";
+            
+                } else if (myPoint < cpuPoint) {
+            
+                    title = "CPUの勝ち！";
+            
+                } else {
+            
+                    title = "引き分け！";
+            
+                }
+            
+                // 結果を表示
+                document.getElementById("resultTitle").textContent =
+                    title;
+            
+                document.getElementById("resultText").innerHTML =
+                    "YOU：" + myPoint + "ポイント<br>" +
+                    "CPU：" + cpuPoint + "ポイント";
+            
+                document.getElementById("resultOverlay").style.display =
+                    "flex";
+            
+                document.getElementById("turnMessage").textContent =
+                    "ゲーム終了";
+            
+                document.getElementById("gameMessage").textContent =
+                    "対戦終了！お疲れさまでした";
+            
+                document.getElementById("cpuThinking").textContent = "";
+            
+                document.getElementById("cpuPanel").classList.remove("active");
+            
+                document.getElementById("myPanel").classList.remove("active");
+            
+            }
+            
+            
+            // ========================================
+            // 初期表示
+            // ========================================
+            
+            createBoxes();
+            
+            displayLife();
+            
+            displayPoint();
+        
+        </script>
+        
+        <script>
+            function resizeGame() {
+        
+                var base = document.querySelector(".base");
+        
+                var scaleX = window.innerWidth / 1200;
+                var scaleY = window.innerHeight / 700;
+        
+                // 画面全体に収まる倍率を計算
+                var scale = Math.min(scaleX, scaleY);
+        
+                // 少し余白を確保
+                scale = scale * 0.98;
 
-</script>
+                base.style.transform = "scale(" + scale + ")";
+            }
 
-</body>
+            // 初期表示
+            window.addEventListener("load", resizeGame);
+        
+            // 画面サイズ変更時
+            window.addEventListener("resize", resizeGame);
+        
+            // 画面回転時
+            window.addEventListener("orientationchange", function() {
+            setTimeout(resizeGame, 200);
+            });
+        
+        </script>
+        <div id="rotateMessage">
+            <div>
+                <p>📱</p>
+                <p>スマートフォンを横向きにしてください</p>
+            </div>
+        </div>
+    </body>
 </html>
+        
+        
+        
+        
+        
+        
